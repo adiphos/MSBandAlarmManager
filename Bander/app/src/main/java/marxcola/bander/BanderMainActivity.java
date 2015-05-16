@@ -31,10 +31,9 @@ public class BanderMainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Perform action on click
-                new BandCommunicator().execute();
+                new BandCommunicator(BanderMainActivity.this).execute();
             }
         });
-
     }
 
     @Override
@@ -57,72 +56,5 @@ public class BanderMainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    public class BandCommunicator  extends AsyncTask<String, String, String> implements BandSkinTemperatureEventListener{
-        BandClient bandClient = null;
-        Integer outsideTemp;
-
-        @Override
-        protected void onPreExecute() {
-            BandInfo[] pairedBands = BandClientManager.getInstance().getPairedBands();
-            if(pairedBands.length > 0) {
-                bandClient = BandClientManager.getInstance().create(BanderMainActivity.this, pairedBands[0]);
-            }
-        }
-
-        public void onBandSkinTemperatureChanged(BandSkinTemperatureEvent temperatureEvent)
-        {
-            float bodyTemp = temperatureEvent.getTemperature();
-            String temparatureAsString = Float.toString(bodyTemp);
-            this.publishProgress(temparatureAsString);
-        }
-
-        @Override
-        protected String doInBackground(String... arg0) {
-            if (bandClient != null) {
-                try {
-                    BandPendingResult<ConnectionState> pendingResult = bandClient.connect();
-
-                    try {
-                        ConnectionState state = pendingResult.await();
-
-                        if (state == ConnectionState.CONNECTED) {
-                            bandClient.getSensorManager().registerSkinTemperatureEventListener(this);
-                        } else {
-                            this.publishProgress("Not Connected");
-                        }
-                    } catch (InterruptedException ex) {
-                        // handle InterruptedException
-                    } catch (BandException ex) {
-                        // handle BandException
-                    }
-
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-
-            return null;
-        }
-
-        protected void onPostExecute(Void result) {
-
-        }
-
-        protected void onProgressUpdate(String... values){
-            super.onProgressUpdate(values);
-
-            TextView display = (TextView) findViewById(R.id.bodyTempField);
-
-            display.setText(values[0]);
-
-            //try {
-                //bandClient.getSensorManager().unregisterSkinTemperatureEventListeners();
-            //}
-            //catch (BandException ex) {
-                // handle BandException
-            //}
-        }
     }
 }
