@@ -16,6 +16,8 @@ import com.microsoft.band.BandInfo;
 import com.microsoft.band.BandIOException;
 import com.microsoft.band.BandPendingResult;
 import com.microsoft.band.ConnectionState;
+import com.microsoft.band.sensors.BandSkinTemperatureEventListener;
+import com.microsoft.band.sensors.BandSkinTemperatureEvent;
 
 
 public class BanderMainActivity extends AppCompatActivity {
@@ -57,10 +59,9 @@ public class BanderMainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class BandCommunicator extends AsyncTask<String, String, String> {
+    public class BandCommunicator  extends AsyncTask<String, String, String> implements BandSkinTemperatureEventListener{
         BandClient bandClient = null;
         Integer outsideTemp;
-        Integer bodytemp;
 
         @Override
         protected void onPreExecute() {
@@ -70,35 +71,34 @@ public class BanderMainActivity extends AppCompatActivity {
             }
         }
 
+        public void onBandSkinTemperatureChanged(BandSkinTemperatureEvent temperatureEvent)
+        {
+            float bodyTemp = temperatureEvent.getTemperature();
+            String temparatureAsString = Float.toString(bodyTemp);
+            this.publishProgress(temparatureAsString);
+        }
+
         @Override
         protected String doInBackground(String... arg0) {
-            if(bandClient != null)
-            {
-                try
-                {
+            if (bandClient != null) {
+                try {
                     BandPendingResult<ConnectionState> pendingResult = bandClient.connect();
 
                     try {
                         ConnectionState state = pendingResult.await();
 
-                        if(state == ConnectionState.CONNECTED) {
-                            bodytemp = 35;
-
-                            this.publishProgress(bodytemp.toString());
+                        if (state == ConnectionState.CONNECTED) {
+                            bandClient.getSensorManager().registerSkinTemperatureEventListener(this);
+                        } else {
+                            this.publishProgress("Not Connected");
                         }
-                        else {
-                         // do work on failure
-                        }
-                    }
-                    catch(InterruptedException ex) {
+                    } catch (InterruptedException ex) {
                         // handle InterruptedException
-                    }
-                    catch(BandException ex) {
+                    } catch (BandException ex) {
                         // handle BandException
                     }
 
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     ex.printStackTrace();
                 }
             }
@@ -117,6 +117,12 @@ public class BanderMainActivity extends AppCompatActivity {
 
             display.setText(values[0]);
 
+            //try {
+                //bandClient.getSensorManager().unregisterSkinTemperatureEventListeners();
+            //}
+            //catch (BandException ex) {
+                // handle BandException
+            //}
         }
     }
 }
