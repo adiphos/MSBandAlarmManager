@@ -1,5 +1,6 @@
 package marxcola.bander;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.widget.TextView;
 
@@ -20,6 +21,10 @@ public class BandCommunicator  extends AsyncTask<String, String, String> impleme
     Integer outsideTemp;
     BanderMainActivity mainActivity;
 
+    public static final String storageConnectionString = "DefaultEndpointsProtocol=https;"
+            + "AccountName=arcadiamarketplace;"
+            + "AccountKey=cvQIEBUTlC8180QotXKDU6He+/TOmqw7GDFFwT3vEZwFcWdi2w9zNJHuym41BkIPW9k3zUD954O0ix+3YeMJDQ==";
+
     public BandCommunicator(BanderMainActivity activity)
     {
         mainActivity = activity;
@@ -37,6 +42,13 @@ public class BandCommunicator  extends AsyncTask<String, String, String> impleme
     {
         float bodyTemp = temperatureEvent.getTemperature();
         String temparatureAsString = Float.toString(bodyTemp);
+
+        // Post the service to azuerer service.
+        Intent azureIntent = new Intent(this.mainActivity, MarxcolaBanderAzuererService.class);
+        azureIntent.putExtra("Conn_String", storageConnectionString);
+        azureIntent.putExtra("Current_Body_temp", temparatureAsString);
+        this.mainActivity.startService(azureIntent);
+
         this.publishProgress(temparatureAsString);
     }
 
